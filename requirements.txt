@@ -1,7 +1,10 @@
-duckdb==1.5.5
-numpy==2.5.1
-pandas==3.0.5
-plotly==6.9.0
-pyarrow==25.0.0
-scikit-learn==1.9.0
-streamlit==1.59.1
+# Minimum constraints rather than exact pins: Streamlit Community Cloud resolves
+# against its own Python build, and hard pins on bleeding-edge releases are a
+# common cause of failed deploys. These floors are the versions whose APIs the
+# app actually relies on.
+pandas>=2.2
+numpy>=1.26
+pyarrow>=14.0          # engine for pd.read_parquet
+scikit-learn>=1.4      # RandomForestRegressor + permutation_importance
+plotly>=5.18
+streamlit>=1.36        # st.page_link, st.column_config.ProgressColumn

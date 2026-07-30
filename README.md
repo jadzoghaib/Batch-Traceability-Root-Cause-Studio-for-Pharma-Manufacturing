@@ -160,11 +160,16 @@ pharma-batch-rca/
 └── smoke_test.py             Exercises every CQA × cohort × chart path
 ```
 
-**Streamlit + DuckDB/Parquet + Plotly.** For a single-developer demo, Streamlit
-keeps analytics and UI in one process with no API layer to maintain; the effort
-saved went into a custom design system instead. Parquet keeps the whole star schema
-at 420 KB, and the raw trajectory for a single batch is read lazily from the zip
-only when that batch is opened.
+**Streamlit + Parquet + Plotly.** For a single-developer demo, Streamlit keeps
+analytics and UI in one process with no API layer to maintain; the effort saved
+went into a custom design system instead. Parquet keeps the whole star schema at
+532 KB, and the raw trajectory for a single batch is read lazily from the zip only
+when that batch is opened.
+
+No query engine is used, deliberately: cohorts are at most a few hundred rows and
+pandas handles them in milliseconds. The Parquet layout is DuckDB-ready for the
+point where trajectories need querying *across* batches rather than one at a time,
+but adding it now would be a dependency carrying no weight.
 
 ### Data model
 
