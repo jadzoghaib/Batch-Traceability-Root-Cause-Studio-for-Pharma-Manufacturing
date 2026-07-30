@@ -27,25 +27,47 @@ def load_lots() -> pd.DataFrame:
     return pd.read_parquet(C.PROCESSED / "dim_material_lot.parquet")
 
 
+def _cached(name: str):
+    """
+    Read a precomputed scan written by the ETL, or None if it is absent.
+
+    The fallbacks below keep the app working from fct_batch.parquet alone, so a
+    stale or missing cache degrades to a one-second recompute rather than an
+    error. The cache is an optimisation, never a dependency.
+    """
+    p = C.PROCESSED / f"fct_{name}.parquet"
+    if p.exists():
+        try:
+            return pd.read_parquet(p)
+        except Exception:
+            return None
+    return None
+
+
 @st.cache_data(show_spinner=False)
 def load_exceptions() -> pd.DataFrame:
-    return A.exception_scan(load_batches())
+    c = _cached("exception_scan")
+    return c if c is not None else A.exception_scan(load_batches())
 
 
 @st.cache_data(show_spinner=False)
 def load_queue() -> pd.DataFrame:
-    return A.exception_queue(load_batches(), load_exceptions())
+    c = _cached("exception_queue")
+    return c if c is not None else A.exception_queue(load_batches(), load_exceptions())
 
 
 @st.cache_data(show_spinner=False)
 def load_prospective_scan() -> pd.DataFrame:
     """Expanding-window scan: every batch judged only on what preceded it."""
-    return A.prospective_exception_scan(load_batches())
+    c = _cached("prospective_scan")
+    return c if c is not None else A.prospective_exception_scan(load_batches())
 
 
 @st.cache_data(show_spinner=False)
 def load_prospective_queue() -> pd.DataFrame:
-    return A.prospective_queue(load_batches(), load_prospective_scan())
+    c = _cached("prospective_queue")
+    return (c if c is not None
+            else A.prospective_queue(load_batches(), load_prospective_scan()))
 
 
 @st.cache_data(show_spinner=False)
@@ -62,6 +84,11 @@ def run_rca_cached(batch_no: int | None, code: int, cqa: str,
 
 @st.cache_data(show_spinner=False)
 def pooled_vs_within_cached(cqa: str) -> pd.DataFrame:
+    c = _cached("pooled_vs_within")
+    if c is not None and "cqa" in c.columns:
+        sub = c[c["cqa"] == cqa]
+        if not sub.empty:
+            return sub.drop(columns=["cqa"]).reset_index(drop=True)
     return A.pooled_vs_within(load_batches(), cqa)
 
 

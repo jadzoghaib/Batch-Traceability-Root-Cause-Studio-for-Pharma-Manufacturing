@@ -179,6 +179,23 @@ dim_material_lot (295)    ─┼─→  fct_batch (1,005 × 109)
 fct_timeseries_feat       ─┘         join key: batch (1:1, zero orphans)
 ```
 
+### Precomputed scans
+
+The ETL also writes the exception scans and the pooled-vs-cohort evidence to
+Parquet, so every page renders immediately on a cold container instead of
+recomputing on first load:
+
+| Artefact | Rows | Read | Recompute |
+|---|---|---|---|
+| `fct_exception_scan` / `_queue` | 445 / 1,005 | | 0.17 s |
+| `fct_prospective_scan` / `_queue` | 8,039 / 1,005 | | 0.75 s |
+| `fct_pooled_vs_within` (8 attributes) | 464 | | 0.41 s each |
+| **all three combined** | | **0.010 s** | 1.16 s |
+
+These are deterministic functions of `fct_batch`, and the loaders fall back to
+computing them if the files are missing or unreadable — the cache is an
+optimisation, never a dependency.
+
 ---
 
 ## Limitations

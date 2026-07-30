@@ -279,6 +279,41 @@ def build_timeseries_features(codes: list[int] | None = None,
     return pd.DataFrame(rows)
 
 
+def build_analytics_cache(batch: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """
+    Precompute the scans the app would otherwise run on first page load.
+
+    These are cheap (~1 s total) but deterministic: they depend only on
+    fct_batch, so computing them once at build time makes every page render
+    immediately on a cold container and turns the scan into an inspectable
+    artefact rather than a hidden runtime step.
+
+    Imported locally to keep the module import graph one-directional
+    (analytics never imports etl).
+    """
+    from . import analytics as A
+
+    out: dict[str, pd.DataFrame] = {}
+    out["exception_scan"] = A.exception_scan(batch)
+    out["exception_queue"] = A.exception_queue(batch, out["exception_scan"])
+    out["prospective_scan"] = A.prospective_exception_scan(batch)
+    out["prospective_queue"] = A.prospective_queue(batch, out["prospective_scan"])
+
+    # pooled-vs-within evidence for every attribute the Method page offers
+    frames = []
+    for cqa in C.CQAS:
+        if cqa not in batch.columns:
+            continue
+        pw = A.pooled_vs_within(batch, cqa)
+        if not pw.empty:
+            pw = pw.copy()
+            pw.insert(0, "cqa", cqa)
+            frames.append(pw)
+    out["pooled_vs_within"] = (pd.concat(frames, ignore_index=True) if frames
+                               else pd.DataFrame())
+    return out
+
+
 # --------------------------------------------------------------------------
 # orchestration
 # --------------------------------------------------------------------------
@@ -298,7 +333,13 @@ def run(with_timeseries: bool = True, progress=lambda *_: None) -> dict[str, pd.
     batch.to_parquet(C.PROCESSED / "fct_batch.parquet", index=False)
     product.to_parquet(C.PROCESSED / "dim_product.parquet", index=False)
     lots.to_parquet(C.PROCESSED / "dim_material_lot.parquet", index=False)
-    return {"batch": batch, "product": product, "lots": lots}
+
+    cache = build_analytics_cache(batch)
+    for name, df in cache.items():
+        if not df.empty:
+            df.to_parquet(C.PROCESSED / f"fct_{name}.parquet", index=False)
+
+    return {"batch": batch, "product": product, "lots": lots, **cache}
 
 
 if __name__ == "__main__":
