@@ -1,5 +1,5 @@
 """
-BatchLens — Quality-to-Process Traceability & RCA for Pharma Manufacturing.
+Batch Investigation Console — Quality-to-Process Traceability & RCA for Pharma Manufacturing.
 
 Entry point / portfolio overview.
 Run:  streamlit run app.py
@@ -15,15 +15,15 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from batchlens import config as C
-from batchlens import data as D
-from batchlens import ui
+from batchrca import config as C
+from batchrca import data as D
+from batchrca import ui
 
 ui.page("Overview")
 ui.sidebar_brand()
 
 if not (C.PROCESSED / "fct_batch.parquet").exists():
-    st.error("Processed data not found. Run:  `python -m batchlens.etl`")
+    st.error("Processed data not found. Run:  `python -m batchrca.etl`")
     st.stop()
 
 batch = D.load_batches()

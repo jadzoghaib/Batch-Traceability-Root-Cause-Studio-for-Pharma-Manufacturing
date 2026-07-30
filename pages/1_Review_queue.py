@@ -9,9 +9,9 @@ sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 import pandas as pd
 import streamlit as st
 
-from batchlens import config as C
-from batchlens import data as D
-from batchlens import ui
+from batchrca import config as C
+from batchrca import data as D
+from batchrca import ui
 
 ui.page("Review queue")
 ui.sidebar_brand()

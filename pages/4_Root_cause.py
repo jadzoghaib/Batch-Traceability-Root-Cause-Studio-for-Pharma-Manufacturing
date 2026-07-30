@@ -1,5 +1,5 @@
 """
-Root-cause analysis — the analytical centre of BatchLens.
+Root-cause analysis — the analytical centre of Batch Investigation Console.
 
 Evidence is presented in three explicitly separate tiers because they license
 different strengths of claim. Merging them into one "AI confidence score" would
@@ -16,11 +16,11 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from batchlens import analytics as A
-from batchlens import charts as CH
-from batchlens import config as C
-from batchlens import data as D
-from batchlens import ui
+from batchrca import analytics as A
+from batchrca import charts as CH
+from batchrca import config as C
+from batchrca import data as D
+from batchrca import ui
 
 ui.page("Root cause")
 ui.sidebar_brand()

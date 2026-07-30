@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
-from batchlens import config as C
+from batchrca import config as C
 
 BASE = "https://ndownloader.figshare.com/files/"
 
@@ -52,7 +52,7 @@ def main() -> None:
             continue
         fetch(name, fid, C.RAW)
 
-    print("\nNext:  python -m batchlens.etl")
+    print("\nNext:  python -m batchrca.etl")
 
 
 if __name__ == "__main__":

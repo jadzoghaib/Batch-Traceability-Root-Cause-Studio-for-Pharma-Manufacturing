@@ -18,10 +18,10 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from batchlens import analytics as A
-from batchlens import config as C
-from batchlens import data as D
-from batchlens import ui
+from batchrca import analytics as A
+from batchrca import config as C
+from batchrca import data as D
+from batchrca import ui
 
 ui.page("Live operations")
 ui.sidebar_brand()

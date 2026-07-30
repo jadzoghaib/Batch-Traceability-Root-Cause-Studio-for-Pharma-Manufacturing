@@ -1,5 +1,5 @@
 """
-BatchLens design system.
+Batch Investigation Console design system.
 
 Register: regulated-industry operations console. Calm, dense, legible under
 fluorescent light at 3pm on a shop floor. The visual job is to make deviation
@@ -48,7 +48,7 @@ PLOT_FONT = dict(family="Inter, -apple-system, Segoe UI, sans-serif",
 
 
 def page(title: str, icon: str = "◧") -> None:
-    st.set_page_config(page_title=f"{title} · BatchLens", page_icon="◧",
+    st.set_page_config(page_title=f"{title} · Batch Investigation Console", page_icon="◧",
                        layout="wide", initial_sidebar_state="expanded")
     inject_css()
 
@@ -199,10 +199,11 @@ def sidebar_brand() -> None:
              padding:.1rem 0 .9rem 0;border-bottom:1px solid {LINE};margin-bottom:1rem'>
           <div style='width:26px;height:26px;border-radius:6px;background:{ACCENT};
                color:white;display:flex;align-items:center;justify-content:center;
-               font-weight:700;font-size:.85rem'>B</div>
+               font-weight:700;font-size:.78rem'>BI</div>
           <div>
-            <div style='font-weight:680;font-size:.95rem;letter-spacing:-.01em'>BatchLens</div>
-            <div style='font-size:.68rem;color:{MUTED};letter-spacing:.04em'>
+            <div style='font-weight:680;font-size:.92rem;letter-spacing:-.012em;
+                 line-height:1.15'>Batch Investigation</div>
+            <div style='font-size:.66rem;color:{MUTED};letter-spacing:.05em'>
               QUALITY-TO-PROCESS RCA</div>
           </div>
         </div>""", unsafe_allow_html=True)
@@ -215,7 +216,5 @@ def data_provenance() -> None:
           <b style='color:{SLATE}'>Data source</b><br>
           Žagar &amp; Mihelič (2022), <i>Scientific Data</i>.<br>
           1,005 real production batches.<br>
-          CC-BY 4.0 · figshare 10.6084/m9.figshare.c.5645578<br><br>
-          <span style='color:{WATCH}'>Independent demo. Not affiliated with,
-          endorsed by, or derived from any commercial vendor.</span>
+          CC-BY 4.0 · figshare 10.6084/m9.figshare.c.5645578
         </div>""", unsafe_allow_html=True)

@@ -1,4 +1,4 @@
-# Theme aligned with src/batchlens/ui.py so the chrome Streamlit renders before
+# Theme aligned with src/batchrca/ui.py so the chrome Streamlit renders before
 # our CSS loads already matches the design system — no flash of default purple.
 [theme]
 primaryColor = "#0E6E8C"

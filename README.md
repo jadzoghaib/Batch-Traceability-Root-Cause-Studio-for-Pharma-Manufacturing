@@ -1,13 +1,8 @@
-# BatchLens — Quality-to-Process Traceability & RCA for Pharma Manufacturing
+# Batch Investigation Console — Quality-to-Process Traceability & RCA for Pharma Manufacturing
 
 Trace final product quality back to incoming raw-material attributes and in-process
 compression conditions, compare good against bad batches, and rank likely root
 causes — on **1,005 real production batches** of a tablet compression process.
-
-> **Independent portfolio project.** Inspired by the general category of intelligent
-> pharmaceutical manufacturing analytics (batch-centric analytics, multivariate RCA,
-> review by exception). Not affiliated with, endorsed by, or built on technology from
-> any commercial vendor.
 
 ---
 
@@ -27,7 +22,7 @@ within-product analysis. Product identity alone explains 85% of hardness varianc
 and 82% of impurities variance. A pooled "top correlations" chart would send a
 quality investigator hunting for exactly the wrong condition.
 
-Everything in BatchLens therefore compares a batch **only against structurally
+Every comparison in this tool is therefore made **only against structurally
 comparable batches** — same product code, falling back to same strength with the
 substitution stated on screen. The evidence for this is inspectable in-app on the
 **Method** page.
@@ -88,7 +83,7 @@ with lab-measured tablet weight RSD. That is not a root cause — it is the same
 physical quantity measured by a second instrument. Left in, it dominates the
 ranking and explains nothing.
 
-BatchLens moves such signals into a separate **confirmatory in-process signals**
+Such signals are moved into a separate **confirmatory in-process signals**
 lane. They keep their real value — visibility *during* the run, hours before a lab
 result exists — without masquerading as causes. Removing them honestly dropped
 model R² from 0.175 to 0.070, which the app reports rather than hides.
@@ -106,7 +101,7 @@ python scripts/download_data.py
 ```
 
 ```bash
-python -m batchlens.etl
+python -m batchrca.etl
 ```
 
 ```bash
@@ -151,10 +146,10 @@ Real published data is messier than its documentation suggests:
 ## Architecture
 
 ```
-pharma-rca/
+pharma-batch-rca/
 ├── app.py                    Overview (entry point)
 ├── pages/                    Review queue · Batch detail · Compare · RCA · Materials · Method
-├── src/batchlens/
+├── src/batchrca/
 │   ├── config.py             Schema, CQA vocabulary, proxy-signal guard, analytical policy
 │   ├── etl.py                Raw CSV/zip → Parquet star schema + time-series features
 │   ├── analytics.py          Cohorts, robust SPC, exception scan, three-tier RCA

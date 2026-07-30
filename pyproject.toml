@@ -1,5 +1,5 @@
 [project]
-name = "batchlens"
+name = "batchrca"
 version = "0.1.0"
 description = "Quality-to-Process Traceability & RCA for Pharma Manufacturing"
 requires-python = ">=3.11"

@@ -1,5 +1,5 @@
 """
-The analytical core of BatchLens.
+The analytical core of Batch Investigation Console.
 
 Everything here obeys one rule, which is the product's central design claim:
 

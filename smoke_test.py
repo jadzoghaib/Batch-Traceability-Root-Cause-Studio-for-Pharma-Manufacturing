@@ -13,9 +13,9 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 import pandas as pd
 
-from batchlens import analytics as A
-from batchlens import charts as CH
-from batchlens import config as C
+from batchrca import analytics as A
+from batchrca import charts as CH
+from batchrca import config as C
 
 batch = pd.read_parquet(C.PROCESSED / "fct_batch.parquet")
 cqas = [c for c in C.CQAS if c in batch.columns]

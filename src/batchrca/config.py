@@ -1,5 +1,5 @@
 """
-Central schema, vocabulary and analytical policy for BatchLens.
+Central schema, vocabulary and analytical policy for Batch Investigation Console.
 
 Design note on limits
 ---------------------

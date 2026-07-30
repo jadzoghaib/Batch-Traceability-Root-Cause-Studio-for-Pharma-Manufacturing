@@ -305,7 +305,7 @@ if __name__ == "__main__":
     def _p(i, n, code):
         print(f"  [{i + 1}/{n}] time series product {code}", flush=True)
 
-    print("Building BatchLens star schema...")
+    print("Building Batch Investigation Console star schema...")
     out = run(with_timeseries=True, progress=_p)
     for k, v in out.items():
         print(f"  {k:8s} {v.shape}")

@@ -15,10 +15,10 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from batchlens import charts as CH
-from batchlens import config as C
-from batchlens import data as D
-from batchlens import ui
+from batchrca import charts as CH
+from batchrca import config as C
+from batchrca import data as D
+from batchrca import ui
 
 ui.page("Method")
 ui.sidebar_brand()
@@ -182,9 +182,5 @@ st.markdown(
     Mihelič, “Big data collection in pharmaceutical manufacturing and its use for
     product quality predictions”, <i>Scientific Data</i> 9, 99 (2022), CC-BY 4.0,
     figshare 10.6084/m9.figshare.c.5645578. 1,005 real production batches of a
-    tablet compression process.<br><br>
-    <b>Independence.</b> BatchLens is an independent portfolio demonstration
-    inspired by the general category of intelligent pharmaceutical manufacturing
-    analytics. It is not affiliated with, endorsed by, or built on technology from
-    any commercial vendor, and it implements no vendor's proprietary methods.
+    tablet compression process.
     </div>""", unsafe_allow_html=True)

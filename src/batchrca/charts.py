@@ -1,5 +1,5 @@
 """
-Chart vocabulary for BatchLens.
+Chart vocabulary for Batch Investigation Console.
 
 Rules applied consistently:
   * The batch under investigation is always violet and always drawn last.
