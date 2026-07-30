@@ -38,6 +38,7 @@ substitution stated on screen. The evidence for this is inspectable in-app on th
 
 | Page | Purpose |
 |---|---|
+| **Live operations** | The plant as it runs: step a production clock month by month, watch batches arrive and cohorts mature |
 | **Overview** | Portfolio health, quality trend, products ranked by flag rate |
 | **Review queue** | Review-by-exception work list; clears 66% of batches from manual review |
 | **Batch detail** | One batch end to end: quality position, 10-second compression trajectory, material genealogy, full process record |
@@ -57,6 +58,28 @@ less. Each candidate driver carries three independent lines of evidence:
    cross-validated random forest *(multivariate)*
 
 A driver is promoted to "prioritised" only when at least two tiers agree.
+
+### Live scoring, not hindsight
+
+The **Live operations** page runs the plant forward on a production clock. Every
+batch is scored against an expanding window of its own product cohort — the control
+limits that existed *at the moment of manufacture*. A product needs 12 prior batches
+before it earns limits at all; until then the status is `No baseline`, not a limit
+invented from four points.
+
+This matters more than it sounds. Scoring against the full dataset is look-ahead
+bias, and on this data it **changes the verdict for 394 of 1,005 batches (39%)**:
+
+| | |
+|---|---|
+| Batches with no baseline yet when made | **223** |
+| Raised live, but clear in hindsight | **26** |
+| Genuine investigations missed during cold start | **24** |
+| Products characterised, Nov 2018 → Apr 2021 | **2 of 10 → 15 of 25** |
+
+Any deviation-reduction claim that ignores this is not a number you could reproduce
+in production. The app shows the live-vs-retrospective confusion matrix rather than
+quoting the flattering figure.
 
 ### The same-quantity guard
 

@@ -166,6 +166,115 @@ def exception_queue(batch: pd.DataFrame, exceptions: pd.DataFrame) -> pd.DataFra
 
 
 # --------------------------------------------------------------------------
+# prospective (live) scanning
+# --------------------------------------------------------------------------
+def prospective_exception_scan(batch: pd.DataFrame,
+                               cqas: list[str] | None = None,
+                               min_history: int = 12) -> pd.DataFrame:
+    """
+    Score every batch using ONLY the batches that preceded it.
+
+    This is the difference between a retrospective study and a running system.
+    `exception_scan` computes cohort limits from the full history — including
+    batches made *after* the one being judged. That is legitimate for archive
+    analysis, but it cannot be reproduced live and it flatters the result:
+    the limits are fitted with knowledge of the future.
+
+    Here each batch is scored against an expanding window of its own product
+    cohort as that cohort existed at the moment of manufacture. A batch is only
+    scored once `min_history` prior batches exist; before that the process is
+    genuinely not yet characterised, and the honest answer is "no baseline yet"
+    rather than a limit invented from four points.
+
+    Returns one row per (batch, CQA) with the limits that were live at the time.
+    """
+    cqas = cqas or [c for c in C.CQAS if c in batch.columns]
+    recs: list[dict] = []
+
+    for code, grp in batch.groupby("code"):
+        # manufacturing order: month first, batch number as tie-break
+        grp = grp.sort_values(["start_date", "batch"])
+        ids = grp["batch"].to_numpy()
+        for cqa in cqas:
+            if cqa not in grp.columns:
+                continue
+            vals = grp[cqa].to_numpy(dtype=float)
+            direction = C.CQAS[cqa]["direction"]
+            for i in range(len(grp)):
+                v = vals[i]
+                if np.isnan(v):
+                    continue
+                prior = vals[:i]
+                hist = prior[~np.isnan(prior)]
+                if len(hist) < min_history:
+                    recs.append({
+                        "batch": int(ids[i]), "code": code, "cqa": cqa,
+                        "value": float(v), "n_history": int(len(hist)),
+                        "status": "No baseline", "severity_score": 0.0,
+                        "z": np.nan, "cohort_median": np.nan,
+                        "lcl": np.nan, "ucl": np.nan})
+                    continue
+                med = float(np.median(hist))
+                mad = float(np.median(np.abs(hist - med)) * 1.4826)
+                if not mad or not np.isfinite(mad):
+                    mad = float(np.std(hist))
+                z = (v - med) / mad if mad and np.isfinite(mad) else np.nan
+                if not np.isfinite(z):
+                    continue
+                bad = (-z if direction == "higher_better"
+                       else z if direction == "lower_better" else abs(z))
+                recs.append({
+                    "batch": int(ids[i]), "code": code, "cqa": cqa,
+                    "value": float(v), "n_history": int(len(hist)),
+                    "status": ("Investigate" if bad >= C.Z_INVESTIGATE
+                               else "Watch" if bad >= C.Z_WATCH else "Clear"),
+                    "severity_score": float(max(bad, 0.0)),
+                    "z": float(z), "cohort_median": med,
+                    "lcl": med - 3 * mad, "ucl": med + 3 * mad})
+    if not recs:
+        return pd.DataFrame(columns=["batch", "code", "cqa", "value", "n_history",
+                                     "status", "severity_score", "z",
+                                     "cohort_median", "lcl", "ucl"])
+    return pd.DataFrame(recs)
+
+
+def prospective_queue(batch: pd.DataFrame, scan: pd.DataFrame) -> pd.DataFrame:
+    """Per-batch roll-up of the prospective scan, in manufacturing order."""
+    base = batch[["batch", "batch_id", "product_id", "strength_label",
+                  "start_date", "code"]].copy()
+    if scan.empty:
+        base["status"] = "No baseline"
+        base["max_severity"] = 0.0
+        base["n_flags"] = 0
+        base["flagged_cqas"] = ""
+        base["n_scored"] = 0
+        return base
+
+    scored = scan[scan["status"] != "No baseline"]
+    rows = []
+    for bno, d in scored.groupby("batch"):
+        flagged = d.loc[d["status"] != "Clear", "cqa"]
+        rows.append({
+            "batch": int(bno),
+            "max_severity": float(d["severity_score"].max()),
+            "n_flags": int(len(flagged)),
+            "flagged_cqas": ", ".join(C.CQAS[c]["label"] for c in flagged),
+            "n_scored": int(len(d)),
+        })
+    roll = pd.DataFrame(rows)
+    out = base.merge(roll, on="batch", how="left")
+    out["max_severity"] = out["max_severity"].fillna(0.0)
+    out["n_flags"] = out["n_flags"].fillna(0).astype(int)
+    out["flagged_cqas"] = out["flagged_cqas"].fillna("")
+    out["n_scored"] = out["n_scored"].fillna(0).astype(int)
+    out["status"] = np.where(
+        out["n_scored"] == 0, "No baseline",
+        np.where(out["max_severity"] >= C.Z_INVESTIGATE, "Investigate",
+                 np.where(out["max_severity"] >= C.Z_WATCH, "Watch", "Clear")))
+    return out.sort_values(["start_date", "batch"]).reset_index(drop=True)
+
+
+# --------------------------------------------------------------------------
 # driver universe
 # --------------------------------------------------------------------------
 def driver_columns(batch: pd.DataFrame, include_low_coverage: bool = False,

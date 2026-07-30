@@ -38,6 +38,17 @@ def load_queue() -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
+def load_prospective_scan() -> pd.DataFrame:
+    """Expanding-window scan: every batch judged only on what preceded it."""
+    return A.prospective_exception_scan(load_batches())
+
+
+@st.cache_data(show_spinner=False)
+def load_prospective_queue() -> pd.DataFrame:
+    return A.prospective_queue(load_batches(), load_prospective_scan())
+
+
+@st.cache_data(show_spinner=False)
 def run_rca_cached(batch_no: int | None, code: int, cqa: str,
                    include_low_coverage: bool = False):
     b = load_batches()
