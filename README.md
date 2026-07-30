@@ -1,5 +1,7 @@
 # Batch Investigation Console — Quality-to-Process Traceability & RCA for Pharma Manufacturing
 
+**▶ [Live demo](https://jadzoghaib-batch-traceability-root-cause-studio-for--app-zrys7k.streamlit.app/)**
+
 Trace final product quality back to incoming raw-material attributes and in-process
 compression conditions, compare good against bad batches, and rank likely root
 causes — on **1,005 real production batches** of a tablet compression process.
@@ -192,9 +194,22 @@ recomputing on first load:
 | `fct_pooled_vs_within` (8 attributes) | 464 | | 0.41 s each |
 | **all three combined** | | **0.010 s** | 1.16 s |
 
-These are deterministic functions of `fct_batch`, and the loaders fall back to
-computing them if the files are missing or unreadable — the cache is an
-optimisation, never a dependency.
+Driver rankings for all 88 `(cohort × attribute)` pairs are precomputed too
+(`fct_rca_drivers`, `fct_rca_meta` — 4,334 rows). This is valid rather than a
+shortcut: in `run_rca`, only the `batch_z` column depends on *which* batch is
+under investigation, and it comes from the cohort's robust z-score, not from the
+model. Everything else — correlations, golden-vs-poor contrast, permutation
+importance, tier agreement, rank order — is a function of `(cohort, attribute)`
+alone, so it can be computed once and the batch position attached at request time.
+
+The practical consequence is that **the deployed app fits no models and never
+imports scikit-learn**, which is worth ~80 MB of resident memory on a shared
+container. Fitting on demand was what got the first deploy CPU-throttled.
+
+All of these are deterministic functions of `fct_batch`, verified to reproduce the
+live computation exactly (identical driver order, correlations and R²), and the
+loaders fall back to computing them if the files are missing or unreadable — the
+cache is an optimisation, never a dependency.
 
 ---
 

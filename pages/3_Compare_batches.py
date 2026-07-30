@@ -85,7 +85,7 @@ if len(good) < 4 or len(poor) < 4:
 # ---------------------------------------------------------------- profile
 st.markdown("## Condition profile: what separated them")
 
-res = A.run_rca(peers, cqa, f"product P-{code:02d}", focus_batch=focus)
+res = D.run_rca_cached(focus, code, cqa)
 if res.drivers.empty:
     st.warning("No driver varied enough within this cohort to compare.")
     st.stop()

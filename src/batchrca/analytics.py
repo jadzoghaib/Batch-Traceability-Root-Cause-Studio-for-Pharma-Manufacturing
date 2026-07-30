@@ -25,9 +25,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.inspection import permutation_importance
-from sklearn.model_selection import KFold, cross_val_predict, cross_val_score
+# scikit-learn is imported lazily inside run_rca(). Importing it at module level
+# costs roughly 80 MB resident even when no model is ever fitted — which is now
+# the normal case, since driver rankings are precomputed at build time. That
+# headroom is the difference between fitting and not fitting inside a 1 GB
+# Streamlit Community Cloud container.
 
 from . import config as C
 
@@ -327,7 +329,8 @@ class RCAResult:
 
 def run_rca(peers: pd.DataFrame, cqa: str, cohort_label: str,
             focus_batch: int | None = None,
-            include_low_coverage: bool = False) -> RCAResult:
+            include_low_coverage: bool = False,
+            n_jobs: int = 1) -> RCAResult:
     """
     Rank candidate drivers of a quality outcome inside one peer cohort.
 
@@ -385,15 +388,24 @@ def run_rca(peers: pd.DataFrame, cqa: str, cohort_label: str,
     use = [c for c in res["driver"] if c in X.columns]
     Xm = X[use]
     if n >= 40:
-        rf = RandomForestRegressor(n_estimators=400, min_samples_leaf=3,
-                                   random_state=0, n_jobs=-1)
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.inspection import permutation_importance
+        from sklearn.model_selection import KFold, cross_val_score
+
+        # n_jobs defaults to 1 because joblib gives each worker its own copy of
+        # X, y and the fitted forest — on a 1 GB Streamlit container that costs
+        # far more memory than the parallelism saves in wall time. The ETL
+        # overrides it, since the build runs on a developer machine where the
+        # tradeoff is reversed.
+        rf = RandomForestRegressor(n_estimators=300, min_samples_leaf=3,
+                                   random_state=0, n_jobs=n_jobs)
         cv = KFold(5, shuffle=True, random_state=0)
         sc = cross_val_score(rf, Xm, y, cv=cv, scoring="r2")
         model_r2, model_std = float(sc.mean()), float(sc.std())
         base_r2 = 0.0
         rf.fit(Xm, y)
-        pi = permutation_importance(rf, Xm, y, n_repeats=15,
-                                    random_state=0, n_jobs=-1, scoring="r2")
+        pi = permutation_importance(rf, Xm, y, n_repeats=8,
+                                    random_state=0, n_jobs=n_jobs, scoring="r2")
         res = res.merge(pd.DataFrame({"driver": use,
                                       "importance": pi.importances_mean,
                                       "importance_sd": pi.importances_std}),
@@ -450,6 +462,30 @@ def run_rca(peers: pd.DataFrame, cqa: str, cohort_label: str,
             "hypotheses, not findings.")
     return RCAResult(cqa, cohort_label, len(peers), res,
                      model_r2, model_std, base_r2, n, warns)
+
+
+def attach_batch_z(drivers: pd.DataFrame, peers: pd.DataFrame,
+                   focus_batch: int | None) -> pd.DataFrame:
+    """
+    Add the focus batch's position to a precomputed ranking.
+
+    Everything else in `run_rca` — correlations, golden/poor contrast, model
+    importance, tier agreement, rank order — is a function of (cohort, attribute)
+    only. `batch_z` is the single column that depends on which batch is being
+    investigated, and it comes from the cohort's robust z, not from the model.
+    That is what makes precomputing the ranking valid rather than a shortcut.
+    """
+    out = drivers.copy()
+    out["batch_z"] = np.nan
+    if focus_batch is None or focus_batch not in set(peers["batch"]):
+        return out
+    idx = peers.index[peers["batch"] == focus_batch][0]
+    for i, c in enumerate(out["driver"]):
+        if c in peers.columns:
+            z = robust_z(peers[c])
+            if idx in z.index:
+                out.iat[i, out.columns.get_loc("batch_z")] = float(z.loc[idx])
+    return out
 
 
 def confirmatory_signals(peers: pd.DataFrame, cqa: str,

@@ -67,8 +67,7 @@ ui.masthead("Root-cause analysis", subtitle)
 st.markdown("")
 
 with st.spinner("Ranking candidate drivers within the peer cohort…"):
-    res = A.run_rca(peers, cqa, cohort_label, focus_batch=bno,
-                    include_low_coverage=adv)
+    res = D.run_rca_cached(bno, code, cqa, include_low_coverage=adv)
 
 if res.drivers.empty:
     st.warning(" ".join(res.warnings) or "Not enough data for this cohort.")

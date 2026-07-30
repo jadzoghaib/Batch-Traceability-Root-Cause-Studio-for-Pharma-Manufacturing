@@ -311,6 +311,36 @@ def build_analytics_cache(batch: pd.DataFrame) -> dict[str, pd.DataFrame]:
             frames.append(pw)
     out["pooled_vs_within"] = (pd.concat(frames, ignore_index=True) if frames
                                else pd.DataFrame())
+
+    # Driver rankings for every (cohort, attribute) the UI can select. These are
+    # the only place scikit-learn is used, so precomputing them keeps the model
+    # fitting — and the sklearn import itself — out of the deployed app.
+    dframes, meta = [], []
+    codes = [c for c, n in batch["code"].value_counts().items()
+             if n >= C.MIN_COHORT_N]
+    for code in sorted(codes):
+        peers = batch[batch["code"] == code]
+        for cqa in C.CQAS:
+            if cqa not in batch.columns:
+                continue
+            # build-time only: parallelise freely, this never runs on the server
+            res = A.run_rca(peers, cqa, f"product P-{code:02d}", n_jobs=-1)
+            if res.drivers.empty:
+                continue
+            d = res.drivers.copy()
+            d.insert(0, "cqa", cqa)
+            d.insert(0, "code", code)
+            dframes.append(d.drop(columns=["batch_z"], errors="ignore"))
+            meta.append({
+                "code": code, "cqa": cqa,
+                "model_r2": res.model_r2, "model_r2_std": res.model_r2_std,
+                "baseline_r2": res.baseline_r2, "n_used": res.n_used,
+                "n_peers": res.n_peers, "cohort_label": res.cohort_label,
+                "warnings": "||".join(res.warnings),
+            })
+    out["rca_drivers"] = (pd.concat(dframes, ignore_index=True) if dframes
+                          else pd.DataFrame())
+    out["rca_meta"] = pd.DataFrame(meta)
     return out
 
 
