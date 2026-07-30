@@ -1,0 +1,13 @@
+# Raw source data: 30 MB zipped, 346 MB unzipped. Redistributable under CC-BY,
+# but fetched on demand rather than committed — see scripts/download_data.py.
+data/raw/
+
+# The processed star schema IS committed (532 KB total). It makes a fresh clone —
+# and a Streamlit Cloud deploy — runnable with no download and no ETL step.
+# Everything except the raw 10-second trajectory view works without data/raw/.
+
+.venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+.ipynb_checkpoints/
